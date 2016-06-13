@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Islas Pelares - Isla del Tesoro</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="icon" href="/static/res/pelares-16x16.png" type="image/png" />
+    <link rel="shortcut icon" href="/static/res/pelares-16x16.png" type="image/png" />
+    <style type='text/css'>
+      /* @import url(/static/css/blue.css); */
+      table.top-fixed th {
+        background-color: #ddd;
+      }
+      tr {
+        height: 20px;
+      }
+
+      td {
+        min-width: 80px;
+      }
+
+      table {
+        border-collapse: collapse;
+      }
+
+      th, td {
+        font-size: 12px;
+        padding: 0;
+        border: 1px solid gray;
+      }
+      th {
+        background-color: lightgrey;
+        border-width: 1px;
+      }
+      td {
+        border-width: 1px;
+        padding: 2px;
+      }
+      td:nth-child(1) {
+        text-align: center;
+      }
+      td:nth-child(3) {
+        text-align: right;
+      }
+      th:nth-child(6) {
+        width: 14px;
+      }
+      tr:first-child td {
+        border-top-width: 0;
+      }
+      tr:nth-child(even) {
+        background-color: #DDE8E8;
+      }
+      tr:nth-child(even):hover {
+        background-color: #FEF8F8;
+      }
+      tr:nth-child(odd) {
+        background-color: #D8D8ED;
+      }
+      tr:nth-child(odd):hover {
+        background-color: #E8E8FE;
+      }
+  	</style>
+  </head>
+  <body>
+    <form id='form1'>
+      <label>Usuario<input id='user' placeholder='admin' /></label>
+      <label>Clave<input id='password' type='password' /></label>
+      <button type='button' onClick='ahorros.updateView();'>Guardar</button>
+    </form>
+    <table>
+      <thead class="fix-top">
+        <tr><th>Fecha</th><th>Descripcion</th><th>Valor</th><th>Transaccion</th><th>Destinacion</th>
+      </thead>
+      <tbody id="transacciones"></tbody>
+    </table>
+    <script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
+    <script src="https://cdn.rawgit.com/j-pel/dynamize/master/scrolling.js"></script>
+    <script>
+
+    (function(exports) {
+
+      'use strict';
+
+      var db = null;
+
+      var init = exports.init = function(server) {
+        db = Couching(server);
+        return 0;
+      }
+
+      var updateView = exports.updateView = function() {
+        db.login({
+          user: form1.user.value,
+          password: form1.password.value
+        }).then(function(info){
+          console.log(info);
+          return db.query('basic/date', {
+            include_docs: true,
+            endkey: "\"2016/03/00\"",
+            startkey: "\"2016/03/31\"",
+            descending: true,
+            attachments: true
+          }).then(function(info) {
+            redrawView(info.rows);
+          }).catch(function(err){
+            console.log("Query error:",err);
+          });
+        }).catch(function(err){
+          console.log("Login error",err);
+        });
+      }
+
+      function redrawView(obj) {
+        var p = new Promise(function(resolve, reject) {
+          obj.forEach(function(elm) {
+            var row = document.getElementById("transacciones").insertRow(-1);
+            row.insertCell(-1).innerHTML = elm.key;
+            row.insertCell(-1).innerHTML = elm.value;
+            row.insertCell(-1).innerHTML = elm.doc.valor;
+            row.insertCell(-1).innerHTML = elm.doc.referencia;
+            row.insertCell(-1).innerHTML = "";//elm.doc.destinación;
+          });
+          resolve(1);
+        });
+        p.then(function(value) {
+          window.dispatchEvent(new Event('resize'));
+        }, function(reason){
+          console.log(reason);
+        });
+      }
+    })(typeof exports === 'undefined'? this['ahorros']={}: exports);
+
+    ahorros.init('http://pelares.com:5984/ahorros');
+
+    </script>  
+  </body>
+</html>
