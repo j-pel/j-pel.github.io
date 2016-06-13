@@ -66,6 +66,7 @@
       <label>Usuario<input id='user' placeholder='admin' /></label>
       <label>Clave<input id='password' type='password' /></label>
       <button type='button' onClick='ahorros.updateView();'>Guardar</button>
+      <label id='message'></label>
     </form>
     <table>
       <thead class="fix-top">
@@ -90,7 +91,7 @@
 
       var updateView = exports.updateView = function() {
         db.login({
-          user: form1.user.value,
+          name: form1.user.value,
           password: form1.password.value
         }).then(function(info){
           console.log(info);
@@ -106,7 +107,7 @@
             console.log("Query error:",err);
           });
         }).catch(function(err){
-          console.log("Login error",err);
+          form1.message.value="Login error"+ err;
         });
       }
 
