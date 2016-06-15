@@ -3,8 +3,8 @@
   <head>
     <title>Islas Pelares - Isla del Tesoro</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <link rel="icon" href="/static/res/pelares-16x16.png" type="image/png" />
-    <link rel="shortcut icon" href="/static/res/pelares-16x16.png" type="image/png" />
+    <link rel="icon" href="static/res/pelares-16x16.png" type="image/png" />
+    <link rel="shortcut icon" href="static/res/pelares-16x16.png" type="image/png" />
     <style type='text/css'>
       /* @import url(/static/css/blue.css); */
       table.top-fixed th {
@@ -65,9 +65,10 @@
     <form id='form1'>
       <label>Usuario<input id='user' placeholder='admin' /></label>
       <label>Clave<input id='password' type='password' /></label>
-      <button type='button' onClick='ahorros.updateView();'>Guardar</button>
+      <input type='submit' value='Buscar'>
       <label id='message'></label>
     </form>
+    <br />
     <table>
       <thead class="fix-top">
         <tr><th>Fecha</th><th>Descripcion</th><th>Valor</th><th>Transaccion</th><th>Destinacion</th>
@@ -86,6 +87,7 @@
 
       var init = exports.init = function(server) {
         db = Couching(server);
+        form1.addEventListener("submit",submitHandler,false);
         return 0;
       }
 
@@ -111,6 +113,12 @@
         });
       }
 
+      function submitHandler(event) {
+        console.log("Submit",event);
+        event.preventDefault();
+        ahorros.updateView();
+      }
+      
       function redrawView(obj) {
         var p = new Promise(function(resolve, reject) {
           obj.forEach(function(elm) {
