@@ -51,20 +51,20 @@
         background-color: #DDE8E8;
       }
       tr:nth-child(even):hover {
-        background-color: #FEF8F8;
+        background-color: #FFFFFF;
       }
       tr:nth-child(odd) {
         background-color: #D8D8ED;
       }
       tr:nth-child(odd):hover {
-        background-color: #E8E8FE;
+        background-color: #FEF8F8;
       }
   	</style>
   </head>
   <body>
     <form id='form1'>
-      <label>Usuario<input id='user' placeholder='admin' /></label>
-      <label>Clave<input id='password' type='password' /></label>
+      <label>Usuario<input id='user' placeholder='admin' size=4 value='' /></label>
+      <label>Clave<input id='password' type='password' size=4 value='' /></label>
       <input type='submit' value='Buscar'>
       <label id='message'></label>
     </form>
@@ -87,6 +87,8 @@
 
       var init = exports.init = function(server) {
         db = Couching(server);
+        form1.user.focus();
+        message.textContent = db.db;
         form1.addEventListener("submit",submitHandler,false);
         return 0;
       }
@@ -96,7 +98,7 @@
           name: form1.user.value,
           password: form1.password.value
         }).then(function(info){
-          console.log(info);
+          if (info.ok) message.textContent = "Bienvenido "+form1.user.value;
           return db.query('basic/date', {
             include_docs: true,
             endkey: "\"2016/03/00\"",
@@ -106,15 +108,15 @@
           }).then(function(info) {
             redrawView(info.rows);
           }).catch(function(err){
+            message.textContent = "Error "+err;
             console.log("Query error:",err);
           });
         }).catch(function(err){
-          form1.message.value="Login error"+ err;
+          message.textContent = "Usuario o contraseña desconocidos";
         });
       }
 
       function submitHandler(event) {
-        console.log("Submit",event);
         event.preventDefault();
         ahorros.updateView();
       }
