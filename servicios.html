@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Islas Pelares - Isla del Tesoro</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="icon" href="static/res/pelares-16x16.png" type="image/png" />
+    <link rel="shortcut icon" href="static/res/pelares-16x16.png" type="image/png" />
+  <style type='text/css'>
+      @import url("https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.4.0/css/pikaday.min.css");
+  body {
+    background-color: #064080;
+    font-family: FreeSans, Verdana, sans-serif;
+    font-size: 12pt;
+  }
+  </style>
+  <style>
+  li {
+    font-size: 10pt;
+    color: white;
+    display: inline;
+    border: 1px dotted #aaa;
+    padding: 4px 8px 4px 8px;
+    cursor: pointer;
+  }
+  li:hover {
+    background-color: #aac;
+  }
+  li.selected {
+    background-color: #aaa;
+  }
+  label, legend {
+    font-size: 10pt;
+    padding-right: 8pt;
+    color: white;
+  }
+  input {
+    margin-left: 4pt;
+    width: 80px;
+  }
+  </style>
+  
+  <ul id='navigator'></ul>
+  <div class='slidable'>
+    <form id=form1>
+      <!--label>Usuario<input id='user' placeholder='admin' size=4 value='' /></label>
+      <label>Clave<input id='password' type='password' size=4 value='' /></label>
+      <input type='submit' value='Buscar'-->
+      <label>Fecha<input id='fecha' placeholder='aaaa-mm-dd' /></label>
+      <label id='message'></label>
+      <label onClick='servicios.redrawGraph("acueducto");'>Acueducto<input id='acueducto' /></label>
+      <label onClick='servicios.redrawGraph("energía");'>Energía<input id='energía' /></label>
+      <label onClick='servicios.redrawGraph("gas");'>Gas<input id='gas' /></label>
+      <button type='button' onClick='servicios.storeInfo();'>Guardar</button>
+      <fieldset>
+        <legend>Precios</legend>
+          <label>Acueducto<input id='unitario.acueducto' /></label>
+          <label>Alcantarillado<input id='unitario.alcantarillado' /></label>
+          <label>Energía<input id='unitario.energía' /></label>
+          <label>Gas<input id='unitario.gas' /></label>
+      </fieldset>
+    </form>
+  </div>
+  <canvas id="myChart" width="300" height="100"></canvas>
+
+  <script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
+  <script src="https://cdn.rawgit.com/j-pel/dynamize/master/sliding.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/locale/es.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.4.0/pikaday.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.min.js"></script>
+  <script src="static/js/servicios.js"></script>
+  <script>
+    moment.locale('es');
+    var picker = new Pikaday({ field: document.getElementById('fecha') });
+    servicios.init('http://pelares.com:5984/servicios');
+    servicios.updateView();
+  </script>
+  </body>
+</html>
