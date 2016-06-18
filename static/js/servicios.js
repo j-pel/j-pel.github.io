@@ -14,7 +14,11 @@
       since: 'now',
       live: true
     }).on('change', updateView);
-*/    return 0;
+*/  db.login({
+      name: "jorge",
+      password:"ostrojpa"
+    }).then(prepare);  
+    return 0;
 	}
 	
 	var updateView = exports.updateView = function() {
@@ -162,6 +166,49 @@
     else
       obj[is[0]] = typeof obj[is[0]] !== 'undefined' ?  obj[is[0]] : {};
       return dotIndex(obj[is[0]],is.slice(1), value);
+  }
+
+  function prepare() {
+    var doc = {
+      _id: "_design/index",
+      views: {
+         short_names: {
+            map: "function (doc) {\
+              emit(doc._id,doc.fecha);\
+            }"
+         }
+      },
+      shows: {
+        subjects: "function(doc, req) {\
+          return {\
+            headers: {\
+              \"Content-Type\" : \"application/json\"\
+            },\
+            body: doc\
+          }\
+        }"
+      },
+      lists: {
+        allowed: "function(head, req) {\
+          return {\
+            headers: {\
+              \"Content-Type\" : \"application/json\"\
+            },\
+            body: req\
+          }\
+        }"
+      },
+      validate_doc_update: "function(newDoc, oldDoc, userCtx) {\
+        throw({\
+          forbidden : 'Faltan permisos para realizar la operación'\
+        });\
+      }"
+    };
+    db.put(doc).then(function(info){
+      console.log(info);
+    }).catch(function(err){
+      console.log("Error in design document put:",err);
+    });
   }
 
 })(typeof exports === 'undefined'? this['servicios']={}: exports);
