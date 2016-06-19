@@ -14,10 +14,7 @@
       since: 'now',
       live: true
     }).on('change', updateView);
-*/  db.login({
-      name: "jorge",
-      password:"ostrojpa"
-    }).then(prepare);  
+*/  
     return 0;
 	}
 	
