@@ -182,9 +182,9 @@
         subjects: "function(doc, req) {\
           return {\
             headers: {\
-              \"Content-Type\" : \"application/json\"\
+              \"Content-Type\" : \"application/json, charset=ISO-8859-1\"\
             },\
-            body: doc\
+            body: toJSON(doc)\
           }\
         }"
       },
@@ -194,7 +194,7 @@
             headers: {\
               \"Content-Type\" : \"application/json\"\
             },\
-            body: req\
+            body: toJSON(req)\
           }\
         }"
       },
