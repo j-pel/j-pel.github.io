@@ -170,42 +170,86 @@
       _id: "_design/index",
       views: {
          short_names: {
-            map: "function (doc) {\
-              emit(doc._id,doc.fecha);\
-            }"
+            map: function (doc) {
+              emit(doc._id,doc.nombre_corto);
+            }
+         },
+         cargos: {
+            map: function (doc) {
+              emit([doc.cargo,doc._id],[doc.nombres,doc.apellidos]);
+            }
          }
       },
       shows: {
-        subjects: "function(doc, req) {\
-          return {\
-            headers: {\
-              \"Content-Type\" : \"application/json, charset=ISO-8859-1\"\
-            },\
-            body: toJSON(doc)\
-          }\
-        }"
+        invoices: function(doc, req) {
+          var info = {};
+          info.fecha = doc.fecha;
+          var role = req.userCtx.roles[0];
+          switch(role) {
+          case "editor":
+            break;
+          case "_admin":
+            break;
+          default:
+            break;
+          }
+
+          return {
+            headers: {
+              "Content-Type" : "application/json"
+            },
+            body: toJSON(info)
+          }
+        }
       },
       lists: {
-        allowed: "function(head, req) {\
-          return {\
-            headers: {\
-              \"Content-Type\" : \"application/json\"\
-            },\
-            body: toJSON(req)\
-          }\
-        }"
+        allowed: function(head,req){
+          var row;
+          start({
+            "headers": {"Content-Type": "application/json"}
+          });
+          var role = req.userCtx.roles[0];
+          switch(role) {
+          case "editor":
+            break;
+          case "_admin":
+            while(row = getRow()) {
+              send(toJSON(row.value));
+            }
+            break;
+          default:
+            send("{\"error\":\"No autorizado\"}");
+          }
+        }
       },
-      validate_doc_update: "function(newDoc, oldDoc, userCtx) {\
-        throw({\
-          forbidden : 'Faltan permisos para realizar la operación'\
-        });\
-      }"
+      validate_doc_update: function(newDoc, oldDoc, userCtx) {
+        throw({
+          forbidden : 'Faltan permisos para realizar la operación'
+        });
+      }
     };
-    db.put(doc).then(function(info){
-      console.log(info);
+    db.put(toDesignDoc(doc)).then(function(info){
+      console.log("Ok put:",info);
     }).catch(function(err){
       console.log("Error in design document put:",err);
     });
+  }
+
+  function toDesignDoc(obj){
+    switch (typeof obj) {
+    case 'object':
+      var doc = {};
+      for (var item in obj) {
+        doc[item] = toDesignDoc(obj[item]);
+      }
+      return(doc);
+      break;
+    case 'function':
+      return(obj.toString());
+      break;
+    default:
+      return(obj);
+    }
   }
 
 })(typeof exports === 'undefined'? this['servicios']={}: exports);
