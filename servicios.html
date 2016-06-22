@@ -10,7 +10,7 @@
   body {
     background-color: #064080;
     font-family: FreeSans, Verdana, sans-serif;
-    font-size: 12pt;
+    font-size: 10pt;
   }
   </style>
   <style>
@@ -21,6 +21,18 @@
     border: 1px dotted #aaa;
     padding: 4px 8px 4px 8px;
     cursor: pointer;
+  }
+  table.values th {
+    background-color: #aac;
+  }
+  table.values td {
+    background-color: #ccc;
+  }
+  table.values input {
+    background-color: transparent;
+    text-align: right;
+    border: 0px;
+    width: 120px;
   }
   li:hover {
     background-color: #aac;
@@ -39,25 +51,35 @@
   }
   </style>
   
-  <ul id='navigator'></ul>
   <div class='slidable'>
     <form id=form1>
-      <!--label>Usuario<input id='user' placeholder='admin' size=4 value='' /></label>
-      <label>Clave<input id='password' type='password' size=4 value='' /></label>
-      <input type='submit' value='Buscar'-->
+      <center>
+      <ul id='navigator'></ul>
+      <table class='values'>
+      <thead>
+      <tr>
+        <th>Servicio</th><th>Acueducto</th><th>Alcantarillado</th><th>Energía</th><th>Gas</th>
+      <tbody>
+      <tr>
+        <td>Contador</td>
+        <td><input id='acueducto' /></td>
+        <td>&nbsp;</td>
+        <td><input id='energía' /></td>
+        <td><input id='gas' /></td>
+      </tr>
+      <tr>
+        <td>Unitario</td>
+        <td><input id='unitario.acueducto' /></td>
+        <td><input id='unitario.alcantarillado' /></td>
+        <td><input id='unitario.energía' /></td>
+        <td><input id='unitario.gas' /></td>
+      </tr>
+      </tbody>
+      </table>
       <label>Fecha<input id='fecha' placeholder='aaaa-mm-dd' /></label>
-      <label id='message'></label>
-      <label onClick='servicios.redrawGraph("acueducto");'>Acueducto<input id='acueducto' /></label>
-      <label onClick='servicios.redrawGraph("energía");'>Energía<input id='energía' /></label>
-      <label onClick='servicios.redrawGraph("gas");'>Gas<input id='gas' /></label>
+      <label id='message'>Clave de acceso<input type='password' size=4 value='' id='password' /></label>
       <button type='button' onClick='servicios.storeInfo();'>Guardar</button>
-      <fieldset>
-        <legend>Precios</legend>
-          <label>Acueducto<input id='unitario.acueducto' /></label>
-          <label>Alcantarillado<input id='unitario.alcantarillado' /></label>
-          <label>Energía<input id='unitario.energía' /></label>
-          <label>Gas<input id='unitario.gas' /></label>
-      </fieldset>
+      </center>
     </form>
   </div>
   <canvas id="myChart" width="300" height="100"></canvas>

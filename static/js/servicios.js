@@ -18,9 +18,20 @@
     return 0;
 	}
 	
-	var updateView = exports.updateView = function() {
-    return db.query('basic/date', {
-      include_docs: true,
+	var prepareView = exports.prepareView = function(name,password) {
+    return db.login({
+      name:name,
+      password:password
+    }).then(function(info){
+      prepare();
+    }).catch(function(err){
+      console.log('Prepare error',err);
+    });
+  }
+  
+  var updateView = exports.updateView = function() {
+    return db.query('index/date', {
+      include_docs: false,
       limit:13,
       descending: true,
       attachments: true
@@ -37,10 +48,10 @@
     nav.appendChild(createSelector(i,"+"))
     obj.forEach(function(item) {
       i++;
-      nav.appendChild(createSelector(i,moment(item.doc.fecha).format("MMM")));
-      item.doc.index = i;
-      item.doc.draw = slideShow;
-      sliding.append(item.doc);
+      nav.appendChild(createSelector(i,moment(item.value.fecha).format("MMM")));
+      item.value.index = i;
+      item.value.draw = slideShow;
+      sliding.append(item.value);
 		});
 	}
 
@@ -169,14 +180,14 @@
     var doc = {
       _id: "_design/index",
       views: {
-         short_names: {
+         date: {
             map: function (doc) {
-              emit(doc._id,doc.nombre_corto);
+              emit(doc.fecha,doc);
             }
          },
-         cargos: {
+         precios: {
             map: function (doc) {
-              emit([doc.cargo,doc._id],[doc.nombres,doc.apellidos]);
+              emit(doc.unitario,doc);
             }
          }
       },
@@ -185,6 +196,7 @@
           var info = {};
           info.fecha = doc.fecha;
           var role = req.userCtx.roles[0];
+          info.rol = role;
           switch(role) {
           case "editor":
             break;
