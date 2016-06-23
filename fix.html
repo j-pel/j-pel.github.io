@@ -6,6 +6,7 @@
     <link rel="icon" href="static/res/pelares-16x16.png" type="image/png" />
     <link rel="shortcut icon" href="static/res/pelares-16x16.png" type="image/png" />
     <link rel="stylesheet" href="http://codemirror.net/lib/codemirror.css">
+    <link rel="stylesheet" href="http://ea-1intranet/pservicios/res/css/menu-bar.css">
   <style type='text/css'>
   body {
     background-color: #064080;
@@ -18,71 +19,132 @@
   }
   .CodeMirror {
     border: 1px solid #eee;
-    height: 240px;
+    height: 640px;
     width: 100%;
   }
   </style>
-  <form id=form1>
-    <center><nobr>
-      <label id='message'>Nombre<input size=4 value='' id='user' /></label>
-      <label id='message'>Clave<input type='password' size=4 value='' id='password' /></label>
-      <label id='message'>Info<input size=4 value='' id='info' /></label>
-      <button type='button' onClick='fix.connect(user.value,password.value,info.value);'>Conectar</button>
-    </nobr></center>
-  </form>
-  <br />
-  <textarea id="ed1" class="CodeMirror"></textarea>
-  <ul>
-    <li>Views<ul id='views'></ul></li>
-    <li>Lists<ul id='lists'></ul></li>
-    <li>Shows<ul id='shows'></ul></li>
-  </ul>
-  <script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
-  <script src="http://codemirror.net/lib/codemirror.js"></script>
-  <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
-  <script>
+  </head>
+  <body onload='fix.connect(user.value,password.value,host.value,info.value);'>
+    <div class="menu-bar">
+      <ul>
+        <li>Views<ul id='views'></ul></li>
+        <li>Lists<ul id='lists'></ul></li>
+        <li>Shows<ul id='shows'></ul></li>
+      </ul>
+    </div>
+    <form id=form1>
+      <center><nobr>
+        <label id='message'>Fix:<input size=4 value='superv' id='user' /></label>
+        <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
+        <label id='message'>@<input size=8 value='mt22-fis:5984' id='host' /></label>
+        <label id='message'>/<input size=4 value='personal' id='info' /></label>
+        <button type='button' onClick='fix.connect(user.value,password.value,host.value,info.value);'>Conectar</button>
+      </nobr></center>
+    </form>
+    <br />
+    <textarea id="ed1" class="CodeMirror"></textarea>
+    <script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
+    <script src="http://codemirror.net/lib/codemirror.js"></script>
+    <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
+    <script>
 
 (function(exports) {
 
   'use strict';
 
   var db = null;
+  var selected = null;
+  var isDirty = false;
+  var doc = {};
   var editor1 = CodeMirror.fromTextArea(ed1, {
     lineWrapping: true,
     lineNumbers: true,
     tabSize: 2,
     mode:  "javascript"
   });
-
-  var connect = exports.connect = function(name,password,info) {
-    db = Couching('http://'+name+':'+password+'@pelares.com:5984/'+info);
+  CodeMirror.addEventListener('change',function(evt){
+    console.log('cambia todo cambia',evt);
+    isDirty = true;
+  },false);
+  var connect = exports.connect = function(name,password,host,info) {
+    db = Couching('http://'+name+':'+password+'@'+host+'/'+info);
     db.get('_design/index').then(function(info){
-      for (var f in info.views) {
-        var i = document.createElement('li');
-        i.innerHTML = f;
-        i.style.cursor = 'pointer';
-        i.addEventListener('click',function(evt){
-          editor1.setValue(info.views[f].map);
-        }, false);
-        views.appendChild(i);
-      }
-      for (var f in info.lists) {
-        var i = document.createElement('li');
-        i.innerHTML = f;
-        i.style.cursor = 'pointer';
-        i.addEventListener('click',function(evt){
-          editor1.setValue(info.lists[f]);
-        }, false);
-        lists.appendChild(i);
-      }
+      doc = info;
+      refresh();
       console.log("ok",info);
     }).catch(function(err){
       console.log("bad",err);
     });
   }
 
+  function select(item) {
+    if (selected) {
+      (selected[2]) ? doc[selected[0]][selected[1]][selected[2]] = editor1.getValue():
+        doc[selected[0]][selected[1]] = editor1.getValue();
+      if (isDirty) db.put(doc).then(function(info){
+        doc._rev = info.rev;
+        console.log('saved',info);
+      }).catch(function(err){
+        console.log("bad",err);
+      });
+    }
+    switch (item.innerHTML) {
+    case 'map':
+      selected = [
+        item.parentNode.parentNode.parentNode.id,
+        item.parentNode.parentNode.id,
+        'map'
+      ];
+      break;
+    case 'reduce':
+      selected = [
+        item.parentNode.parentNode.parentNode.id,
+        item.parentNode.parentNode.id,
+        'reduce'
+      ];
+      break;
+    default:
+      selected = [
+        item.parentNode.id,
+        item.innerHTML
+      ];
+    }
+    (selected[2]) ? editor1.setValue(doc[selected[0]][selected[1]][selected[2]]):
+      editor1.setValue(doc[selected[0]][selected[1]]);
+    isDirty = false;
+  }
+
+  function refresh() {
+    for (var f in doc.views) {
+      if (typeof(doc.views[f])==='object') {
+        var o = views.appendChild(document.createElement('li'));
+        o.innerHTML = f;
+        o.id = f;
+        o = o.appendChild(document.createElement('ul'));
+        for (var g in doc.views[f]) {
+          o.appendChild(createMenuItem(g));
+        }
+      } else {
+        views.appendChild(createMenuItem(f));
+      }
+    }
+    for (var f in doc.lists) {
+      lists.appendChild(createMenuItem(f));
+    }
+    for (var f in doc.shows) {
+      shows.appendChild(createMenuItem(f));
+    }
+    function createMenuItem(name) {
+      var i = document.createElement('li');
+      i.innerHTML = name;
+      i.addEventListener('click',function(evt){
+        select(evt.target);
+      }, false);
+      return i;      
+    }
+  }
 })(typeof exports === 'undefined'? this['fix']={}: exports);
 
-  </script>
+    </script>
   </body>
 </html>
