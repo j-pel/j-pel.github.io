@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Islas Pelares - Isla Palma</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="icon" href="static/res/pelares-16x16.png" type="image/png" />
+    <link rel="shortcut icon" href="static/res/pelares-16x16.png" type="image/png" />
+    <link rel="stylesheet" href="http://codemirror.net/lib/codemirror.css">
+  <style type='text/css'>
+  body {
+    background-color: #064080;
+    font-family: FreeSans, Verdana, sans-serif;
+    font-size: 10pt;
+  }
+  form {
+    background-color: #ccc;
+    padding: 2px;
+  }
+  .CodeMirror {
+    border: 1px solid #eee;
+    height: 240px;
+    width: 100%;
+  }
+  </style>
+  <form id=form1>
+    <center><nobr>
+      <label id='message'>Nombre<input size=4 value='' id='user' /></label>
+      <label id='message'>Clave<input type='password' size=4 value='' id='password' /></label>
+      <label id='message'>Info<input size=4 value='' id='info' /></label>
+      <button type='button' onClick='fix.connect(user.value,password.value,info.value);'>Conectar</button>
+    </nobr></center>
+  </form>
+  <br />
+  <textarea id="ed1" class="CodeMirror"></textarea>
+  <ul>
+    <li>Views<ul id='views'></ul></li>
+    <li>Lists<ul id='lists'></ul></li>
+    <li>Shows<ul id='shows'></ul></li>
+  </ul>
+  <script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
+  <script src="http://codemirror.net/lib/codemirror.js"></script>
+  <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
+  <script>
+
+(function(exports) {
+
+  'use strict';
+
+  var db = null;
+  var editor1 = CodeMirror.fromTextArea(ed1, {
+    lineWrapping: true,
+    lineNumbers: true,
+    tabSize: 2,
+    mode:  "javascript"
+  });
+
+  var connect = exports.connect = function(name,password,info) {
+    db = Couching('http://'+name+':'+password+'@pelares.com:5984/'+info);
+    db.get('_design/index').then(function(info){
+      for (var f in info.views) {
+        var i = document.createElement('li');
+        i.innerHTML = f;
+        i.style.cursor = 'pointer';
+        i.addEventListener('click',function(evt){
+          editor1.setValue(info.views[f].map);
+        }, false);
+        views.appendChild(i);
+      }
+      for (var f in info.lists) {
+        var i = document.createElement('li');
+        i.innerHTML = f;
+        i.style.cursor = 'pointer';
+        i.addEventListener('click',function(evt){
+          editor1.setValue(info.lists[f]);
+        }, false);
+        lists.appendChild(i);
+      }
+      console.log("ok",info);
+    }).catch(function(err){
+      console.log("bad",err);
+    });
+  }
+
+})(typeof exports === 'undefined'? this['fix']={}: exports);
+
+  </script>
+  </body>
+</html>
