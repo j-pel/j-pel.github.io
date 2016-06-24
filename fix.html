@@ -62,16 +62,14 @@
     tabSize: 2,
     mode:  "javascript"
   });
-  CodeMirror.addEventListener('change',function(evt){
-    console.log('cambia todo cambia',evt);
+  editor1.on('change',function(evt){
     isDirty = true;
-  },false);
+  });
   var connect = exports.connect = function(name,password,host,info) {
     db = Couching('http://'+name+':'+password+'@'+host+'/'+info);
     db.get('_design/index').then(function(info){
       doc = info;
       refresh();
-      console.log("ok",info);
     }).catch(function(err){
       console.log("bad",err);
     });
