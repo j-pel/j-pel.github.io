@@ -6,7 +6,7 @@
     <link rel="icon" href="static/res/pelares-16x16.png" type="image/png" />
     <link rel="shortcut icon" href="static/res/pelares-16x16.png" type="image/png" />
     <link rel="stylesheet" href="http://codemirror.net/lib/codemirror.css">
-    <link rel="stylesheet" href="http://ea-1intranet/pservicios/res/css/menu-bar.css">
+    <!--link rel="stylesheet" href="../../prj/js/dynamize/css/menu-bar.css"-->
   <style type='text/css'>
   body {
     background-color: #064080;
@@ -19,8 +19,35 @@
   }
   .CodeMirror {
     border: 1px solid #eee;
-    height: 640px;
+    height: 480px;
     width: 100%;
+  }
+  div.edit-bar {
+    width: 520px;
+    top: 40px;
+    position: fixed;
+    right: 10px;
+  }
+  div.menu-bar {
+    position: fixed;
+    top: 40px;
+    left: 10px;
+    width: 180px;
+  }
+  div.menu-bar ul {
+    -webkit-padding-start: 14px;
+    background-color: #ccc;
+    list-style-type: none;
+    -webkit-margin-before: 0px;
+    -webkit-margin-after: 0px;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+  }
+  div.menu-bar li {
+    cursor: pointer;
+  }
+  div.menu-bar li:hover {
+    background-color: #f6ff54;
   }
   </style>
   </head>
@@ -34,16 +61,19 @@
     </div>
     <form id=form1>
       <center><nobr>
-        <label id='message'>Fix:<input size=4 value='superv' id='user' /></label>
-        <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
-        <label id='message'>@<input size=8 value='mt22-fis:5984' id='host' /></label>
-        <label id='message'>/<input size=4 value='personal' id='info' /></label>
+        <label id='message'>Fix:<input size=4 value='jorge' id='user' /></label>
+        <label id='message'>:<input size=4 value='ostrojpa' type='password' id='password' /></label>
+        <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
+        <label id='message'>/<input size=4 value='servicios' id='info' /></label>
         <button type='button' onClick='fix.connect(user.value,password.value,host.value,info.value);'>Conectar</button>
       </nobr></center>
     </form>
     <br />
-    <textarea id="ed1" class="CodeMirror"></textarea>
-    <script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
+    <div class='edit-bar'>
+      <textarea id="ed1" class="CodeMirror"></textarea>
+    </div>
+    <!--script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script-->
+    <script src="../../prj/js/dynamize/couching.js"></script>
     <script src="http://codemirror.net/lib/codemirror.js"></script>
     <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
     <script>
@@ -66,12 +96,15 @@
     isDirty = true;
   });
   var connect = exports.connect = function(name,password,host,info) {
+    doc = {};
+    selected = null;
     db = Couching('http://'+name+':'+password+'@'+host+'/'+info);
     db.get('_design/index').then(function(info){
       doc = info;
       refresh();
     }).catch(function(err){
       console.log("bad",err);
+      refresh();
     });
   }
 
@@ -113,6 +146,9 @@
   }
 
   function refresh() {
+    views.innerHTML = "";
+    lists.innerHTML = "";
+    shows.innerHTML = "";
     for (var f in doc.views) {
       if (typeof(doc.views[f])==='object') {
         var o = views.appendChild(document.createElement('li'));
