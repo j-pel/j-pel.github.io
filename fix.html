@@ -31,39 +31,24 @@
     position: fixed;
     right: 10px;
   }
-  div.menu-bar {
+  #menu-bar {
+    background-color: #eee;
     position: fixed;
     top: 40px;
     left: 10px;
     width: 180px;
-  }
-  div.menu-bar ul {
-    -webkit-padding-start: 14px;
-    background-color: #ccc;
-    list-style-type: none;
-    -webkit-margin-before: 0px;
-    -webkit-margin-after: 0px;
-    -webkit-margin-start: 0px;
-    -webkit-margin-end: 0px;
-  }
-  div.menu-bar li {
-    cursor: pointer;
-  }
-  div.menu-bar li:hover {
-    background-color: #f6ff54;
   }
   #ddocs {
     width: 100%;
   }
   #funs {
     width: 100%;
-    background-color: #eee;
   }
   </style>
   </head>
   <body onload='fix.connect(user.value,password.value,host.value,info.value);'>
-    <div class="menu-bar">
-      <select id='ddocs'></select>
+    <div id="menu-bar">
+      <div id='ddocs'></div>
       <div id='funs'></div>
     </div>
     <form id=form1>
@@ -102,21 +87,19 @@
   editor1.on('change',function(evt){
     isDirty = true;
   });
+
   var connect = exports.connect = function(name,password,host,info) {
     doc = {};
     selected = null;
     db = Couching('http://'+name+':'+password+'@'+host+'/'+info);
-    var sel = document.getElementById("ddocs");
-    sel.addEventListener('change', function(event){
-      getDdoc(event.target.value);
-    });
+    var f = document.getElementById('ddocs');
     db.get('_all_docs?startkey="_design/"&endkey="_design0"').then(function(info){
       info.rows.forEach(function(row) {
-        var opt = document.createElement("option");
-        opt.text = row.id.slice(8);
-        opt.value = row.id;
-        sel.appendChild(opt);
+        var d = createMenuItem(row.id.slice(8));
+        d.id = row.id.slice(8);
+        f.appendChild(d);
       });
+      f.appendChild(createNewItem());
       getDdoc(info.rows[0].id);
       sel.selectedIndex = 0;
     });
@@ -133,6 +116,12 @@
   }
 
   function select(item) {
+    console.log("Selected",item);
+    item.style.borderStyle = 'inset';
+
+    if(item.parentNode.id === "ddocs") {
+      getDdoc("_design/" + item.id);
+    }
     if (selected) {
       (selected[2]) ? doc[selected[0]][selected[1]][selected[2]] = editor1.getValue():
         doc[selected[0]][selected[1]] = editor1.getValue();
@@ -187,12 +176,10 @@
       f.id = type;
       f.appendChild(l);
       if (doc[type]) {
-        console.log(doc[type]);
         for (var fun in doc[type]) {
           f.appendChild(createMenuItem(fun));
         }
       }
-      //f.appendChild(document.createElement('br'));
       f.appendChild(createNewItem());
       funs.appendChild(f);
     };
@@ -203,26 +190,30 @@
     f.appendChild(l);
     f.appendChild(createMenuItem('validate_doc_update'));
     funs.appendChild(f);
-    function createMenuItem(name) {
-      var i = document.createElement('button');
-      i.innerHTML = name;
-      i.addEventListener('click',function(event){
-        select(event.target);
-      }, false);
-      return i;      
-    }
-    function createNewItem() {
-      var i = document.createElement('input');
-      i.placeholder = 'new';
-      i.classList.add('new_item');
-      i.addEventListener('change',function(event){
-        var b = createMenuItem(event.target.value);
-        event.target.parentNode.insertBefore(b,event.target);
-        event.target.value = "";
-      }, false);
-      return i;      
-    }
   }
+
+  function createMenuItem(name) {
+    var i = document.createElement('button');
+    i.innerHTML = name;
+    i.addEventListener('click',function(event){
+      select(event.target);
+    }, false);
+    return i;      
+  }
+
+  function createNewItem() {
+    var i = document.createElement('input');
+    i.placeholder = 'new';
+    i.classList.add('new_item');
+    i.addEventListener('change',function(event){
+      var b = createMenuItem(event.target.value);
+      b.id = event.target.value;
+      event.target.parentNode.insertBefore(b,event.target);
+      event.target.value = "";
+    }, false);
+    return i;      
+  }
+
 })(typeof exports === 'undefined'? this['fix']={}: exports);
 
     </script>
