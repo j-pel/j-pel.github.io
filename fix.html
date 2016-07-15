@@ -3,8 +3,8 @@
   <head>
     <title>Islas Pelares - Isla Palma</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <link rel="icon" href="static/res/pelares-16x16.png" type="image/png" />
-    <link rel="shortcut icon" href="static/res/pelares-16x16.png" type="image/png" />
+    <link rel="icon" href="pelares-16x16.png" type="image/png" />
+    <link rel="shortcut icon" href="pelares-16x16.png" type="image/png" />
     <link rel="stylesheet" href="http://codemirror.net/lib/codemirror.css">
     <!--link rel="stylesheet" href="../../prj/js/dynamize/css/menu-bar.css"-->
   <style type='text/css'>
@@ -16,6 +16,9 @@
   form {
     background-color: #ccc;
     padding: 2px;
+  }
+  input.new_item {
+    width: 48px;
   }
   .CodeMirror {
     border: 1px solid #eee;
@@ -49,20 +52,24 @@
   div.menu-bar li:hover {
     background-color: #f6ff54;
   }
+  #ddocs {
+    width: 100%;
+  }
+  #funs {
+    width: 100%;
+    background-color: #eee;
+  }
   </style>
   </head>
   <body onload='fix.connect(user.value,password.value,host.value,info.value);'>
     <div class="menu-bar">
-      <ul>
-        <li>Views<ul id='views'></ul></li>
-        <li>Lists<ul id='lists'></ul></li>
-        <li>Shows<ul id='shows'></ul></li>
-      </ul>
+      <select id='ddocs'></select>
+      <div id='funs'></div>
     </div>
     <form id=form1>
       <center><nobr>
         <label id='message'>Fix:<input size=4 value='jorge' id='user' /></label>
-        <label id='message'>:<input size=4 value='ostrojpa' type='password' id='password' /></label>
+        <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
         <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
         <label id='message'>/<input size=4 value='servicios' id='info' /></label>
         <button type='button' onClick='fix.connect(user.value,password.value,host.value,info.value);'>Conectar</button>
@@ -72,8 +79,8 @@
     <div class='edit-bar'>
       <textarea id="ed1" class="CodeMirror"></textarea>
     </div>
-    <!--script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script-->
-    <script src="../../prj/js/dynamize/couching.js"></script>
+    <script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
+    <!--script src="../../prj/js/dynamize/couching.js"></script-->
     <script src="http://codemirror.net/lib/codemirror.js"></script>
     <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
     <script>
@@ -99,7 +106,24 @@
     doc = {};
     selected = null;
     db = Couching('http://'+name+':'+password+'@'+host+'/'+info);
-    db.get('_design/index').then(function(info){
+    var sel = document.getElementById("ddocs");
+    sel.addEventListener('change', function(event){
+      getDdoc(event.target.value);
+    });
+    db.get('_all_docs?startkey="_design/"&endkey="_design0"').then(function(info){
+      info.rows.forEach(function(row) {
+        var opt = document.createElement("option");
+        opt.text = row.id.slice(8);
+        opt.value = row.id;
+        sel.appendChild(opt);
+      });
+      getDdoc(info.rows[0].id);
+      sel.selectedIndex = 0;
+    });
+  }
+
+  function getDdoc(item) {
+    db.get(item).then(function(info){
       doc = info;
       refresh();
     }).catch(function(err){
@@ -112,12 +136,13 @@
     if (selected) {
       (selected[2]) ? doc[selected[0]][selected[1]][selected[2]] = editor1.getValue():
         doc[selected[0]][selected[1]] = editor1.getValue();
+        /*
       if (isDirty) db.put(doc).then(function(info){
         doc._rev = info.rev;
         console.log('saved',info);
       }).catch(function(err){
         console.log("bad",err);
-      });
+      });*/
     }
     switch (item.innerHTML) {
     case 'map':
@@ -146,33 +171,54 @@
   }
 
   function refresh() {
-    views.innerHTML = "";
-    lists.innerHTML = "";
-    shows.innerHTML = "";
-    for (var f in doc.views) {
-      if (typeof(doc.views[f])==='object') {
-        var o = views.appendChild(document.createElement('li'));
-        o.innerHTML = f;
-        o.id = f;
-        o = o.appendChild(document.createElement('ul'));
-        for (var g in doc.views[f]) {
-          o.appendChild(createMenuItem(g));
+    var ddocTypes = {
+      views: 'Views',
+      lists: 'Lists',
+      shows: 'Shows',
+      updates: 'Updates',
+      filters: 'Filters'
+    };
+    var funs = document.getElementById('funs');
+    funs.innerHTML = "";
+    for (var type in ddocTypes) {
+      var f = document.createElement('fieldset');
+      var l = document.createElement('legend');
+      l.innerHTML = ddocTypes[type];
+      f.id = type;
+      f.appendChild(l);
+      if (doc[type]) {
+        console.log(doc[type]);
+        for (var fun in doc[type]) {
+          f.appendChild(createMenuItem(fun));
         }
-      } else {
-        views.appendChild(createMenuItem(f));
       }
-    }
-    for (var f in doc.lists) {
-      lists.appendChild(createMenuItem(f));
-    }
-    for (var f in doc.shows) {
-      shows.appendChild(createMenuItem(f));
-    }
+      //f.appendChild(document.createElement('br'));
+      f.appendChild(createNewItem());
+      funs.appendChild(f);
+    };
+    var f = document.createElement('fieldset');
+    var l = document.createElement('legend');
+    l.innerHTML = 'Validation';
+    f.id = 'validate';
+    f.appendChild(l);
+    f.appendChild(createMenuItem('validate_doc_update'));
+    funs.appendChild(f);
     function createMenuItem(name) {
-      var i = document.createElement('li');
+      var i = document.createElement('button');
       i.innerHTML = name;
-      i.addEventListener('click',function(evt){
-        select(evt.target);
+      i.addEventListener('click',function(event){
+        select(event.target);
+      }, false);
+      return i;      
+    }
+    function createNewItem() {
+      var i = document.createElement('input');
+      i.placeholder = 'new';
+      i.classList.add('new_item');
+      i.addEventListener('change',function(event){
+        var b = createMenuItem(event.target.value);
+        event.target.parentNode.insertBefore(b,event.target);
+        event.target.value = "";
       }, false);
       return i;      
     }
