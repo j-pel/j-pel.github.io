@@ -56,7 +56,7 @@
     <form id=form1>
       <center><nobr>
         <label id='message'>CouchFix:<input size=4 value='jorge' id='user' /></label>
-        <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
+        <label id='message'>:<input size=4 value='ostrojpa' type='password' id='password' /></label>
         <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
         <label id='message'>/<input size=4 value='servicios' id='info' /></label>
         <button type='button' onClick='fix.connect(user.value,password.value,host.value,info.value);'>Conectar</button>
@@ -89,9 +89,17 @@
   editor1.on('change',function(evt){
     isDirty = true;
   });
+  var ddocTypes = {
+    views: 'Views',
+    lists: 'Lists',
+    shows: 'Shows',
+    updates: 'Updates',
+    filters: 'Filters'
+  };
 
   var connect = exports.connect = function(name,password,host,info) {
     selected = null;
+    doc = {};
     db = Couching('http://'+name+':'+password+'@'+host+'/'+info);
     var f = document.getElementById('ddocs');
     db.get('_all_docs?startkey="_design/"&endkey="_design0"').then(function(info){
@@ -107,7 +115,8 @@
 
   function getDdoc(item) {
     db.get(item).then(function(info){
-      doc = info;
+      doc[item] = info;
+      selected = [item];
       refresh();
     }).catch(function(err){
       console.log("bad",err);
@@ -116,57 +125,53 @@
   }
 
   function select(item) {
-    console.log("Selected",item);
     item.style.borderStyle = 'inset';
 
     if(item.parentNode.id === "ddocs") {
       getDdoc("_design/" + item.id);
+    } else {
+      selected[1] = item.parentNode.id;
+      selected[2] = item.id;
+      console.log("select",selected,doc);
+      if (false) {
+        (selected[2]) ? doc[selected[0]][selected[1]][selected[2]] = editor1.getValue():
+          doc[selected[0]][selected[1]] = editor1.getValue();
+          /*
+        if (isDirty) db.put(doc).then(function(info){
+          doc._rev = info.rev;
+          console.log('saved',info);
+        }).catch(function(err){
+          console.log("bad",err);
+        });*/
+      }
+      /*switch (item.innerHTM) {
+      case 'map':
+        selected = [
+          item.parentNode.parentNode.parentNode.id,
+          item.parentNode.parentNode.id,
+          'map'
+        ];
+        break;
+      case 'reduce':
+        selected = [
+          item.parentNode.parentNode.parentNode.id,
+          item.parentNode.parentNode.id,
+          'reduce'
+        ];
+        break;
+      default:
+        selected = [
+          item.parentNode.id,
+          item.innerHTML
+        ];
+      }*/
+      //console.log(doc,selected);
+      editor1.setValue(doc[selected[0]][selected[1]][selected[2]]);
+      isDirty = false;
     }
-    if (selected) {
-      (selected[2]) ? doc[selected[0]][selected[1]][selected[2]] = editor1.getValue():
-        doc[selected[0]][selected[1]] = editor1.getValue();
-        /*
-      if (isDirty) db.put(doc).then(function(info){
-        doc._rev = info.rev;
-        console.log('saved',info);
-      }).catch(function(err){
-        console.log("bad",err);
-      });*/
-    }
-    switch (item.innerHTML) {
-    case 'map':
-      selected = [
-        item.parentNode.parentNode.parentNode.id,
-        item.parentNode.parentNode.id,
-        'map'
-      ];
-      break;
-    case 'reduce':
-      selected = [
-        item.parentNode.parentNode.parentNode.id,
-        item.parentNode.parentNode.id,
-        'reduce'
-      ];
-      break;
-    default:
-      selected = [
-        item.parentNode.id,
-        item.innerHTML
-      ];
-    }
-    (selected[2]) ? editor1.setValue(doc[selected[0]][selected[1]][selected[2]]):
-      editor1.setValue(doc[selected[0]][selected[1]]);
-    isDirty = false;
   }
 
   function refresh() {
-    var ddocTypes = {
-      views: 'Views',
-      lists: 'Lists',
-      shows: 'Shows',
-      updates: 'Updates',
-      filters: 'Filters'
-    };
     var funs = document.getElementById('funs');
     funs.innerHTML = "";
     for (var type in ddocTypes) {
@@ -175,8 +180,8 @@
       l.innerHTML = ddocTypes[type];
       f.id = type;
       f.appendChild(l);
-      if (doc[type]) {
-        for (var fun in doc[type]) {
+      if (doc[selected[0]][type]) {
+        for (var fun in doc[selected[0]][type]) {
           f.appendChild(createMenuItem(fun));
         }
       }
@@ -195,6 +200,7 @@
   function createMenuItem(name) {
     var i = document.createElement('button');
     i.innerHTML = name;
+    i.id = name;
     i.addEventListener('click',function(event){
       select(event.target);
     }, false);
