@@ -40,6 +40,8 @@
   }
   #ddocs {
     width: 100%;
+    padding: 3px 0px 0px 0px;
+    background-color: #aaa;
   }
   #funs {
     width: 100%;
@@ -53,7 +55,7 @@
     </div>
     <form id=form1>
       <center><nobr>
-        <label id='message'>Fix:<input size=4 value='jorge' id='user' /></label>
+        <label id='message'>CouchFix:<input size=4 value='jorge' id='user' /></label>
         <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
         <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
         <label id='message'>/<input size=4 value='servicios' id='info' /></label>
@@ -89,7 +91,6 @@
   });
 
   var connect = exports.connect = function(name,password,host,info) {
-    doc = {};
     selected = null;
     db = Couching('http://'+name+':'+password+'@'+host+'/'+info);
     var f = document.getElementById('ddocs');
@@ -100,8 +101,7 @@
         f.appendChild(d);
       });
       f.appendChild(createNewItem());
-      getDdoc(info.rows[0].id);
-      sel.selectedIndex = 0;
+      select(document.getElementById(info.rows[0].id.slice(8)));
     });
   }
 
