@@ -56,7 +56,7 @@
     <form id=form1>
       <center><nobr>
         <label id='message'>CouchFix:<input size=4 value='jorge' id='user' /></label>
-        <label id='message'>:<input size=4 value='ostrojpa' type='password' id='password' /></label>
+        <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
         <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
         <label id='message'>/<input size=4 value='servicios' id='info' /></label>
         <button type='button' onClick='fix.connect(user.value,password.value,host.value,info.value);'>Conectar</button>
@@ -65,6 +65,7 @@
     <br />
     <div class='edit-bar'>
       <textarea id="ed1" class="CodeMirror"></textarea>
+      <textarea id="ed2" class="CodeMirror"></textarea>
     </div>
     <script src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
     <!--script src="../../prj/js/dynamize/couching.js"></script-->
@@ -86,9 +87,18 @@
     tabSize: 2,
     mode:  "javascript"
   });
-  editor1.on('change',function(evt){
-    isDirty = true;
+  var editor2 = CodeMirror.fromTextArea(ed2, {
+    lineWrapping: true,
+    lineNumbers: true,
+    tabSize: 2,
+    mode:  "javascript"
   });
+  editor2.display.wrapper.style.display = 'none';
+
+  function changeHandle(evt) {
+    isDirty = true;
+  }
+
   var ddocTypes = {
     views: 'Views',
     lists: 'Lists',
@@ -116,7 +126,8 @@
   function getDdoc(item) {
     db.get(item).then(function(info){
       doc[item] = info;
-      selected = [item];
+      selected = [item,0,0];
+      isDirty = false;
       refresh();
     }).catch(function(err){
       console.log("bad",err);
@@ -126,48 +137,62 @@
 
   function select(item) {
     item.style.borderStyle = 'inset';
-
     if(item.parentNode.id === "ddocs") {
-      getDdoc("_design/" + item.id);
-    } else {
-      selected[1] = item.parentNode.id;
-      selected[2] = item.id;
-      console.log("select",selected,doc);
-      if (false) {
-        (selected[2]) ? doc[selected[0]][selected[1]][selected[2]] = editor1.getValue():
-          doc[selected[0]][selected[1]] = editor1.getValue();
-          /*
-        if (isDirty) db.put(doc).then(function(info){
+      if (selected) {
+        document.getElementById(selected[0].slice(8)).style.borderStyle = 'outset';
+        if (isDirty) db.put(doc[selected[0]]).then(function(info){
           doc._rev = info.rev;
           console.log('saved',info);
         }).catch(function(err){
           console.log("bad",err);
-        });*/
+        });
       }
-      /*switch (item.innerHTM) {
-      case 'map':
-        selected = [
-          item.parentNode.parentNode.parentNode.id,
-          item.parentNode.parentNode.id,
-          'map'
-        ];
+      getDdoc("_design/" + item.id);
+    } else {
+      try {
+        document.getElementById(selected[2]).style.borderStyle = 'outset';
+        switch (selected[1]) {
+        case "views":
+          doc[selected[0]][selected[1]][selected[2]]['map'] = editor1.getValue();
+          doc[selected[0]][selected[1]][selected[2]]['reduce'] = editor2.getValue();
+          break;
+        case "validate":
+          doc[selected[0]][selected[2]] = editor1.getValue();
+          break;
+        default:
+          doc[selected[0]][selected[1]][selected[2]] = editor1.getValue();
+        }
+      } catch(err) {
+
+      }
+      selected[1] = item.parentNode.id;
+      selected[2] = item.id;
+      editor1.on('change',function(){});
+      editor2.on('change',function(){});
+      switch (item.parentNode.id) {
+      case "views":
+        editor1.setValue(doc[selected[0]][selected[1]][selected[2]]['map']);
+        editor2.display.wrapper.style.display = 'block';
+        editor1.display.wrapper.style.height = '360px';
+        editor2.display.wrapper.style.height = '120px';
+        if (doc[selected[0]][selected[1]][selected[2]]['reduce']) {
+          editor2.setValue(doc[selected[0]][selected[1]][selected[2]]['reduce']);
+        } else {
+          editor2.setValue("");
+        }
         break;
-      case 'reduce':
-        selected = [
-          item.parentNode.parentNode.parentNode.id,
-          item.parentNode.parentNode.id,
-          'reduce'
-        ];
+      case "validate":
+        editor1.setValue(doc[selected[0]][selected[2]]);
+        editor1.display.wrapper.style.height = '480px';
+        editor2.display.wrapper.style.display = 'none';
         break;
       default:
-        selected = [
-          item.parentNode.id,
-          item.innerHTML
-        ];
-      }*/
-      //console.log(doc,selected);
-      editor1.setValue(doc[selected[0]][selected[1]][selected[2]]);
-      isDirty = false;
+        editor1.setValue(doc[selected[0]][selected[1]][selected[2]]);
+        editor1.display.wrapper.style.height = '480px';
+        editor2.display.wrapper.style.display = 'none';
+      }
+      editor1.on('change',changeHandle);
+      editor2.on('change',changeHandle);
     }
   }
 
