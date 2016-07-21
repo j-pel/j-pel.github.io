@@ -22,14 +22,27 @@ div.small-box {
 	font-size: 10pt;
 	text-decoration: none;
 }
+div.think {
+	position: absolute;
+	border: 1pt dotted #999;
+	text-align: center;
+	vertical-align: middle;
+	width: 340px;
+	height: 460px;
+	padding: 4px;
+	margin: 2px;
+	font-size: 10pt;
+	text-decoration: none;
+	background-color: #f79c76;
+}
 div.pw-box {
 	position: absolute;
 	background-color: #fbd554;
 	border: 1pt solid #999;
 	text-align: center;
 	vertical-align: middle;
-	width: 64px;
-	height: 40px;
+	width: 96px;
+	height: 36px;
 	padding: 4px;
 	margin: 2px;
 	font-size: 10pt;
@@ -74,10 +87,12 @@ div.pw-box {
 	</style>
   <body>
     <h1>Nuvola personale</h1>
-    <p>Collezioni di pensieri soltanto per i tuoi occhi. Quei begli occhi socchiusi</p>
-
+    <p>Collezioni di pensieri soltanto per i tuoi occhi. Quei begli occhi socchiusi.</p>
+    <div id=mura></div>
     <div id="b1" class="pw-box" style="top: 8px; left: 312px;">
-    	<label>Segreto<input id=segreto type=password size=4 value="" /></label>
+    	<label>Il segreto
+    		<input id=segreto type=password size=4 value="" /><button id=vai type=button>Vai</button>
+    	</label>
     </div>
 
     <script type="text/javascript" src="https://cdn.rawgit.com/j-pel/dynamize/master/couching.js"></script>
@@ -86,21 +101,49 @@ div.pw-box {
     <script type="text/javascript" src="https://cdn.rawgit.com/j-pel/dynamize/master/rotating.js"></script-->
     <script>
 (function(){
-	moving.init(store_changes);
 	
-	db = Couching('https://pelares.cloudant.com/nuvola');
+	db = null;
 
 	document.getElementById('segreto').addEventListener('keypress',keypress_handler,false);
+	document.getElementById('vai').addEventListener('click',click_handler,false);
+
 	function keypress_handler(event){
 		if (event.code === 'Enter') {
-			db.login().then(function(info){
-				console.log(info);
-			}).catch(function(err){
-				console.log(err);
-			});
+			connect(event.target.value);
 		}
 	}
 
+	function click_handler() {
+		connect(document.getElementById('segreto').value);
+	}
+
+	function connect(to) {
+		db = Couching('https://pelares:'+to+'@pelares.cloudant.com/nuvola');
+		db.query('index/by_date',{
+			descending: true,
+			include_docs: true
+		}).then(function(info){
+			document.getElementById('segreto').value = "";
+			display(info.rows);
+		}).catch(function(err){
+			console.log(err);
+		});
+	}
+
+	function display(data) {
+		var wall = document.getElementById('mura');
+		setTimeout(function() {
+			wall.innerHTML = "<center>Tempo scaduto</center>";
+		}, 300000);
+		for (var obj in data) {
+			var div = document.createElement('div');
+			div.innerHTML = data[obj].doc.text;
+			div.classList.add('think');
+			div.classList.add('movable');
+			wall.appendChild(div);
+		}
+		moving.init(store_changes);
+	}
 	var store_changes = function(changes) {
 		console.log(changes);
 		return 0;
