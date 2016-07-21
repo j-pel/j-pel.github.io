@@ -58,7 +58,7 @@
         <label id='message'>CouchFix:<input size=4 value='jorge' id='user' /></label>
         <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
         <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
-        <label id='message'>/<input size=4 value='servicios' id='info' /></label>
+        <label id='message'>/<input size=4 value='' id='info' /></label>
         <button type='button' onClick='fix.connect(user.value,password.value,host.value,info.value);'>Conectar</button>
       </nobr></center>
     </form>
@@ -128,11 +128,20 @@
       doc[item] = info;
       selected = [item,0,0];
       isDirty = false;
-      refresh();
     }).catch(function(err){
-      console.log("bad",err);
-      refresh();
+      if (err.error === "not_found") {
+        db.put({_id: item}).then(function(info){
+          doc[item] = info;
+          selected = [item,0,0];
+          isDirty = false;
+        }).catch(function(err){
+          console.log("bad:",err);
+        });
+      } else {
+        console.log("bad:",err);
+      }
     });
+    refresh();
   }
 
   function select(item) {
