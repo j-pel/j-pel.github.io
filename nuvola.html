@@ -24,16 +24,39 @@ div.small-box {
 }
 div.think {
 	position: absolute;
+	display: inline-block;
 	border: 1pt dotted #999;
 	text-align: center;
 	vertical-align: middle;
 	width: 340px;
-	height: 460px;
 	padding: 4px;
 	margin: 2px;
 	font-size: 10pt;
 	text-decoration: none;
 	background-color: #f79c76;
+}
+div.answer {
+	position: absolute;
+	border: 1pt dotted #999;
+	text-align: center;
+	vertical-align: middle;
+	top: 6px;
+	left: 380px;
+	width: 340px;
+	height: 80px;
+	padding: 4px;
+	margin: 2px;
+	font-size: 10pt;
+	text-decoration: none;
+	background-color: #91f776;
+	padding-bottom: 20px;
+}
+div.answer textarea {
+	width: 100%;
+	height: 100%;
+	background-color: transparent;
+}
+div.answer button {
 }
 div.pw-box {
 	position: absolute;
@@ -87,9 +110,9 @@ div.pw-box {
 	</style>
   <body>
     <h1>Nuvola personale</h1>
-    <p>Collezioni di pensieri soltanto per i tuoi occhi. Quei begli occhi socchiusi.</p>
+    <p>Collezioni di pensieri soltanto per i tuoi occhi.<br />Quei begli occhi socchiusi.</p>
     <div id=mura></div>
-    <div id="b1" class="pw-box" style="top: 8px; left: 312px;">
+    <div id="b1" class="pw-box" style="top: 6px; left: 250px;">
     	<label>Il segreto
     		<input id=segreto type=password size=4 value="" /><button id=vai type=button>Vai</button>
     	</label>
@@ -119,6 +142,10 @@ div.pw-box {
 
 	function connect(to) {
 		db = Couching('https://pelares:'+to+'@pelares.cloudant.com/nuvola');
+		refresh();
+	}
+
+	function refresh() {
 		db.query('index/by_date',{
 			descending: true,
 			include_docs: true
@@ -132,22 +159,70 @@ div.pw-box {
 
 	function display(data) {
 		var wall = document.getElementById('mura');
+		wall.innerHTML = "";
 		setTimeout(function() {
 			wall.innerHTML = "<center>Tempo scaduto</center>";
 		}, 300000);
+		var top = 120;
 		for (var obj in data) {
 			var div = document.createElement('div');
 			div.innerHTML = data[obj].doc.text;
 			div.classList.add('think');
 			div.classList.add('movable');
+			if (data[obj].doc.author==="ojos") {
+				div.style.left = "380px";
+				div.style.backgroundColor = "#91f776";
+			}
+			top += 40;
+			div.style.top = top +"px";
 			wall.appendChild(div);
 		}
+		var div = document.createElement('div');
+		var text = document.createElement('textarea');
+		text.id = "message";
+		div.appendChild(text);
+		var button = document.createElement('input');
+		button.type = "file";
+		button.id = "upload_file";
+		button.multiple = true;
+		div.appendChild(button);
+		var button = document.createElement('button');
+		button.type = "button";
+		button.id = "send";
+		button.innerHTML = "Envía";
+		div.appendChild(button);
+		div.classList.add('answer');
+		//div.classList.add('movable');
+		wall.appendChild(div);
+		document.getElementById('send').addEventListener('click',upload,false);
 		moving.init(store_changes);
 	}
 	var store_changes = function(changes) {
 		console.log(changes);
 		return 0;
 	}
+
+	function upload(event) {
+		var text = document.getElementById("message");
+		var now = new Date;
+		var id = now.toISOString();
+		var doc = {_id:id, text:text.value, author:"ojos"};
+		db.put(doc).then(function(info){
+		  var file = document.getElementById("upload_file");
+		  if (file.files.length>0) {
+			  upOne(0);
+			  function upOne(i) {
+			    db.attach(id,file.files[i++]).then(function(data){
+			      if(i<file.files.length) upOne(i);
+			    });
+			  }
+		  }
+		  refresh();
+		}).catch(function(err){
+			console.log(err);
+		});
+	}
+
 })();
     </script>
   </body>
