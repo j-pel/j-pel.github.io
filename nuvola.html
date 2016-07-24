@@ -32,6 +32,7 @@ div.think {
 	padding: 4px;
 	margin: 2px;
 	font-size: 10pt;
+	border-radius: 5px;
 	text-decoration: none;
 	background-color: #f79c76;
 }
@@ -175,6 +176,11 @@ div.pw-box {
 			}
 			top += 40;
 			div.style.top = top +"px";
+			if (data[obj].doc.style) {
+				for (var style in data[obj].doc.style) {
+					div.style[style] = data[obj].doc.style[style];
+				}
+			}
 			wall.appendChild(div);
 		}
 		var div = document.createElement('div');
