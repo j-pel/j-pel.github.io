@@ -71,7 +71,7 @@
     <br />
     <table>
       <thead class="fix-top">
-        <tr><th>Fecha</th><th>Descripcion</th><th>Valor</th><th>Transaccion</th><th>Destinacion</th>
+        <tr><th>Fecha</th><th>Descripción</th><th>Valor</th><th>Transacción</th><th>Destinación</th>
       </thead>
       <tbody id="transacciones"></tbody>
     </table>
@@ -120,7 +120,7 @@
         event.preventDefault();
         ahorros.updateView();
       }
-      
+
       function redrawView(obj) {
         var p = new Promise(function(resolve, reject) {
           obj.forEach(function(elm) {
@@ -143,6 +143,6 @@
 
     ahorros.init('http://pelares.com:5984/ahorros');
 
-    </script>  
+    </script>
   </body>
 </html>
