@@ -56,9 +56,9 @@
     <form id=form1>
       <center><nobr>
         <label id='message'>CouchFix:<input size=4 value='jorge' id='user' /></label>
-        <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
+        <label id='message'>:<input size=4 value='mu&d1f1c1l' type='password' id='password' /></label>
         <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
-        <label id='message'>/<input size=4 value='' id='info' /></label>
+        <label id='message'>/<input size=4 value='servicios' id='info' /></label>
         <button type='button' onClick='fix.connect(user.value,password.value,host.value,info.value);'>Conectar</button>
       </nobr></center>
     </form>
@@ -107,6 +107,13 @@
     filters: 'Filters'
   };
 
+  /*!
+   * connect(name,password,host,info)
+   * To connect to an existing CouchDB server and retrieve all
+   * design documents.
+   *
+   */
+
   var connect = exports.connect = function(name,password,host,info) {
     selected = null;
     doc = {};
@@ -128,12 +135,14 @@
       doc[item] = info;
       selected = [item,0,0];
       isDirty = false;
+      refresh();
     }).catch(function(err){
       if (err.error === "not_found") {
         db.put({_id: item}).then(function(info){
           doc[item] = info;
           selected = [item,0,0];
           isDirty = false;
+          refresh();
         }).catch(function(err){
           console.log("bad:",err);
         });
@@ -141,43 +150,57 @@
         console.log("bad:",err);
       }
     });
-    refresh();
   }
 
   function select(item) {
     item.style.borderStyle = 'inset';
+    try {
+      document.getElementById(selected[2]).style.borderStyle = 'outset';
+      } catch(err) {
+      }
     if(item.parentNode.id === "ddocs") {
       if (selected) {
         document.getElementById(selected[0].slice(8)).style.borderStyle = 'outset';
-        if (isDirty) db.put(doc[selected[0]]).then(function(info){
+        if (isDirty) console.log("isDirty"); /*db.put(doc[selected[0]]).then(function(info){
           doc._rev = info.rev;
           console.log('saved',info);
         }).catch(function(err){
           console.log("bad",err);
-        });
+        });*/
+      } else {
+        selected = [item.id,0,0]
       }
       getDdoc("_design/" + item.id);
     } else {
-      try {
-        document.getElementById(selected[2]).style.borderStyle = 'outset';
-        switch (selected[1]) {
-        case "views":
-          doc[selected[0]][selected[1]][selected[2]]['map'] = editor1.getValue();
-          doc[selected[0]][selected[1]][selected[2]]['reduce'] = editor2.getValue();
-          break;
-        case "validate":
-          doc[selected[0]][selected[2]] = editor1.getValue();
-          break;
-        default:
-          doc[selected[0]][selected[1]][selected[2]] = editor1.getValue();
+      switch (selected[1]) {
+      case "views":
+        var text = editor1.getValue();
+        if (text != doc[selected[0]][selected[1]][selected[2]]['map']) {
+          doc[selected[0]][selected[1]][selected[2]]['map'] = text;
+          isDirty = true;
         }
-      } catch(err) {
-
+        var text = editor2.getValue();
+        if (text != doc[selected[0]][selected[1]][selected[2]]['reduce']) {
+          doc[selected[0]][selected[1]][selected[2]]['reduce'] = text;
+          isDirty = true;
+        }
+        break;
+      case "validate":
+        var text = editor1.getValue();
+        if (text != doc[selected[0]][selected[2]]) {
+          doc[selected[0]][selected[2]] = text;
+          isDirty = true;
+        }
+        break;
+      default:
+        var text = editor1.getValue();
+        if (text != doc[selected[0]][selected[1]][selected[2]]) {
+          doc[selected[0]][selected[1]][selected[2]] = text;
+          isDirty = true;
+        }
       }
       selected[1] = item.parentNode.id;
       selected[2] = item.id;
-      editor1.on('change',function(){});
-      editor2.on('change',function(){});
       switch (item.parentNode.id) {
       case "views":
         editor1.setValue(doc[selected[0]][selected[1]][selected[2]]['map']);
@@ -191,7 +214,10 @@
         }
         break;
       case "validate":
-        editor1.setValue(doc[selected[0]][selected[2]]);
+        var validate = (!doc[selected[0]][selected[2]])?
+          "function (newDoc, oldDoc, userCtx) {}":
+          doc[selected[0]][selected[2]];
+        editor1.setValue(validate);
         editor1.display.wrapper.style.height = '480px';
         editor2.display.wrapper.style.display = 'none';
         break;
@@ -200,8 +226,6 @@
         editor1.display.wrapper.style.height = '480px';
         editor2.display.wrapper.style.display = 'none';
       }
-      editor1.on('change',changeHandle);
-      editor2.on('change',changeHandle);
     }
   }
 
