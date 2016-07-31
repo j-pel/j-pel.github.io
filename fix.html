@@ -56,7 +56,7 @@
     <form id=form1>
       <center><nobr>
         <label id='message'>CouchFix:<input size=4 value='jorge' id='user' /></label>
-        <label id='message'>:<input size=4 value='mu&d1f1c1l' type='password' id='password' /></label>
+        <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
         <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
         <label id='message'>/<input size=4 value='servicios' id='info' /></label>
         <button type='button' onClick='fix.connect(user.value,password.value,host.value,info.value);'>Conectar</button>
@@ -156,12 +156,13 @@
     item.style.borderStyle = 'inset';
     try {
       document.getElementById(selected[2]).style.borderStyle = 'outset';
-      } catch(err) {
-      }
+    } catch(err) {
+    }
     if(item.parentNode.id === "ddocs") {
       if (selected) {
         document.getElementById(selected[0].slice(8)).style.borderStyle = 'outset';
-        if (isDirty) console.log("isDirty"); /*db.put(doc[selected[0]]).then(function(info){
+        if (isDirty) console.log("isDirty"); 
+        /*db.put(doc[selected[0]]).then(function(info){
           doc._rev = info.rev;
           console.log('saved',info);
         }).catch(function(err){
