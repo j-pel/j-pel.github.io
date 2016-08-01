@@ -78,6 +78,8 @@
   'use strict';
 
   var db = null;
+  var ddoc = "";
+  var fun = "";
   var selected = null;
   var isDirty = false;
   var doc = {};
@@ -121,26 +123,26 @@
     var f = document.getElementById('ddocs');
     db.get('_all_docs?startkey="_design/"&endkey="_design0"').then(function(info){
       info.rows.forEach(function(row) {
-        var d = createMenuItem(row.id.slice(8));
+        var d = createMenuItem("ddocs",row.id.slice(8));
         d.id = row.id.slice(8);
         f.appendChild(d);
       });
-      f.appendChild(createNewItem());
-      select(document.getElementById(info.rows[0].id.slice(8)));
+      f.appendChild(createNewItem("ddocs"));
+      selectDdoc(document.getElementById(info.rows[0].id.slice(8)));
     });
   }
 
   function getDdoc(item) {
     db.get(item).then(function(info){
-      doc[item] = info;
-      selected = [item,0,0];
+      doc = info;
+      ddoc = item.slice(8);
       isDirty = false;
       refresh();
     }).catch(function(err){
       if (err.error === "not_found") {
         db.put({_id: item}).then(function(info){
-          doc[item] = info;
-          selected = [item,0,0];
+          doc = info;
+          ddoc = item.slice(8);
           isDirty = false;
           refresh();
         }).catch(function(err){
@@ -152,84 +154,6 @@
     });
   }
 
-  function select(item) {
-    item.style.borderStyle = 'inset';
-    try {
-      document.getElementById(selected[2]).style.borderStyle = 'outset';
-    } catch(err) {
-    }
-    if(item.parentNode.id === "ddocs") {
-      if (selected) {
-        document.getElementById(selected[0].slice(8)).style.borderStyle = 'outset';
-        if (isDirty) console.log("isDirty"); 
-        /*db.put(doc[selected[0]]).then(function(info){
-          doc._rev = info.rev;
-          console.log('saved',info);
-        }).catch(function(err){
-          console.log("bad",err);
-        });*/
-      } else {
-        selected = [item.id,0,0]
-      }
-      getDdoc("_design/" + item.id);
-    } else {
-      switch (selected[1]) {
-      case "views":
-        var text = editor1.getValue();
-        if (text != doc[selected[0]][selected[1]][selected[2]]['map']) {
-          doc[selected[0]][selected[1]][selected[2]]['map'] = text;
-          isDirty = true;
-        }
-        var text = editor2.getValue();
-        if (text != doc[selected[0]][selected[1]][selected[2]]['reduce']) {
-          doc[selected[0]][selected[1]][selected[2]]['reduce'] = text;
-          isDirty = true;
-        }
-        break;
-      case "validate":
-        var text = editor1.getValue();
-        if (text != doc[selected[0]][selected[2]]) {
-          doc[selected[0]][selected[2]] = text;
-          isDirty = true;
-        }
-        break;
-      default:
-        var text = editor1.getValue();
-        if (text != doc[selected[0]][selected[1]][selected[2]]) {
-          doc[selected[0]][selected[1]][selected[2]] = text;
-          isDirty = true;
-        }
-      }
-      selected[1] = item.parentNode.id;
-      selected[2] = item.id;
-      switch (item.parentNode.id) {
-      case "views":
-        editor1.setValue(doc[selected[0]][selected[1]][selected[2]]['map']);
-        editor2.display.wrapper.style.display = 'block';
-        editor1.display.wrapper.style.height = '360px';
-        editor2.display.wrapper.style.height = '120px';
-        if (doc[selected[0]][selected[1]][selected[2]]['reduce']) {
-          editor2.setValue(doc[selected[0]][selected[1]][selected[2]]['reduce']);
-        } else {
-          editor2.setValue("");
-        }
-        break;
-      case "validate":
-        var validate = (!doc[selected[0]][selected[2]])?
-          "function (newDoc, oldDoc, userCtx) {}":
-          doc[selected[0]][selected[2]];
-        editor1.setValue(validate);
-        editor1.display.wrapper.style.height = '480px';
-        editor2.display.wrapper.style.display = 'none';
-        break;
-      default:
-        editor1.setValue(doc[selected[0]][selected[1]][selected[2]]);
-        editor1.display.wrapper.style.height = '480px';
-        editor2.display.wrapper.style.display = 'none';
-      }
-    }
-  }
-
   function refresh() {
     var funs = document.getElementById('funs');
     funs.innerHTML = "";
@@ -239,12 +163,12 @@
       l.innerHTML = ddocTypes[type];
       f.id = type;
       f.appendChild(l);
-      if (doc[selected[0]][type]) {
-        for (var fun in doc[selected[0]][type]) {
-          f.appendChild(createMenuItem(fun));
+      if (doc[type]) {
+        for (var fun in doc[type]) {
+          f.appendChild(createMenuItem(type,fun));
         }
       }
-      f.appendChild(createNewItem());
+      f.appendChild(createNewItem(type));
       funs.appendChild(f);
     };
     var f = document.createElement('fieldset');
@@ -252,22 +176,114 @@
     l.innerHTML = 'Validation';
     f.id = 'validate';
     f.appendChild(l);
-    f.appendChild(createMenuItem('validate_doc_update'));
+    f.appendChild(createMenuItem('validate', 'validate_doc_update'));
     funs.appendChild(f);
+    selectFun(funs.firstChild.children[1]);
   }
 
-  function createMenuItem(name) {
+  function selectDdoc(item) {
+    try {
+      document.getElementById(ddoc).style.borderStyle = 'outset';
+    } catch(err) {
+    }
+    if (isDirty) console.log("isDirty", doc); else console.log("No change", doc);
+    /*db.put(ddoc).then(function(info){
+      doc._rev = info.rev;
+      console.log('saved',info);
+    }).catch(function(err){
+      console.log("bad",err);
+    });*/
+    item.style.borderStyle = 'inset';
+    getDdoc("_design/" + item.id);
+  }
+
+  function selectFun(item) {
+    if (fun!='') {
+      try {
+        document.getElementById(fun).style.borderStyle = 'outset';
+      } catch(err) {
+      }
+      var type = fun.split('/');
+      switch (type[0]) {
+      case "views":
+        var text = editor1.getValue();
+        if (text != doc[type[0]][type[1]]['map']) {
+          doc[type[0]][type[1]]['map'] = text;
+          isDirty = true;
+        }
+        var text = editor2.getValue();
+        if (text != doc[type[0]][type[1]]['reduce']) {
+          doc[type[0]][type[1]]['reduce'] = text;
+          isDirty = true;
+        }
+        break;
+      case "validate":
+        var text = editor1.getValue();
+        if (text != doc['validate_doc_update']) {
+          doc['validate_doc_update'] = text;
+          isDirty = true;
+        }
+        break;
+      default:
+        var text = editor1.getValue();
+        if (text != doc[type[0]][type[1]]) {
+          doc[type[0]][type[1]] = text;
+          isDirty = true;
+        }
+      }
+    }
+    item.style.borderStyle = 'inset';
+    fun = item.id;
+    var type = fun.split('/');
+    switch (type[0]) {
+    case "views":
+      editor1.setValue(doc[type[0]][type[1]]['map']);
+      editor2.display.wrapper.style.display = 'block';
+      editor1.display.wrapper.style.height = '360px';
+      editor2.display.wrapper.style.height = '120px';
+      if (doc[type[0]][type[1]]['reduce']) {
+        editor2.setValue(doc[type[0]][type[1]]['reduce']);
+      } else {
+        editor2.setValue("");
+      }
+      break;
+    case "validate":
+      var validate = (!doc['validate_doc_update'])?
+        "function (newDoc, oldDoc, userCtx) {\n\t\n}":
+        doc['validate_doc_update'];
+      editor1.setValue(validate);
+      editor1.display.wrapper.style.height = '480px';
+      editor2.display.wrapper.style.display = 'none';
+      break;
+    default:
+      editor1.setValue(doc[type[0]][type[1]]);
+      editor1.display.wrapper.style.height = '480px';
+      editor2.display.wrapper.style.display = 'none';
+    }
+  }
+
+  function createMenuItem(type,name) {
     var i = document.createElement('button');
     i.innerHTML = name;
-    i.id = name;
-    i.addEventListener('click',function(event){
-      select(event.target);
-    }, false);
+    switch (type) {
+    case "ddocs":
+      i.id = name;
+      i.addEventListener('click',function(event){
+        selectDdoc(event.target);
+      }, false);
+      break;
+    default:
+      i.id = type+"/"+name;
+      i.addEventListener('click',function(event){
+        selectFun(event.target);
+      }, false);
+    }
     return i;      
   }
 
-  function createNewItem() {
+  function createNewItem(type) {
     var i = document.createElement('input');
+    i.id = type+'/new';
     i.placeholder = 'new';
     i.classList.add('new_item');
     i.addEventListener('change',function(event){
