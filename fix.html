@@ -55,7 +55,7 @@
     </div>
     <form id=form1>
       <center><nobr>
-        <label id='message'>CouchFix:<input size=4 value='jorge' id='user' /></label>
+        <label id='message'>CouchFix:<input size=4 value='' id='user' /></label>
         <label id='message'>:<input size=4 value='' type='password' id='password' /></label>
         <label id='message'>@<input size=8 value='pelares.com' id='host' /></label>
         <label id='message'>/<input size=4 value='servicios' id='info' /></label>
@@ -71,6 +71,7 @@
     <!--script src="../../prj/js/dynamize/couching.js"></script-->
     <script src="http://codemirror.net/lib/codemirror.js"></script>
     <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
+    <script src="http://codemirror.net/mode/erlang/erlang.js"></script>
     <script>
 
 (function(exports) {
@@ -80,22 +81,20 @@
   var db = null;
   var ddoc = "";
   var fun = "";
-  var selected = null;
   var isDirty = false;
   var doc = {};
   var editor1 = CodeMirror.fromTextArea(ed1, {
     lineWrapping: true,
     lineNumbers: true,
     tabSize: 2,
-    mode:  "javascript"
+    mode: 'javascript'
   });
   var editor2 = CodeMirror.fromTextArea(ed2, {
     lineWrapping: true,
     lineNumbers: true,
     tabSize: 2,
-    mode:  "javascript"
+    mode: (doc.language?doc.language:'javascript')
   });
-  editor2.display.wrapper.style.display = 'none';
 
   function changeHandle(evt) {
     isDirty = true;
@@ -117,7 +116,6 @@
    */
 
   var connect = exports.connect = function(name,password,host,info) {
-    selected = null;
     doc = {};
     db = Couching('http://'+name+':'+password+'@'+host+'/'+info);
     var f = document.getElementById('ddocs');
@@ -136,6 +134,7 @@
     db.get(item).then(function(info){
       doc = info;
       ddoc = item.slice(8);
+      fun = "";
       isDirty = false;
       refresh();
     }).catch(function(err){
@@ -143,13 +142,14 @@
         db.put({_id: item}).then(function(info){
           doc = info;
           ddoc = item.slice(8);
+          fun = "";
           isDirty = false;
           refresh();
         }).catch(function(err){
-          console.log("bad:",err);
+          console.log("bad doc put:",err);
         });
       } else {
-        console.log("bad:",err);
+        console.log("bad doc get:",err);
       }
     });
   }
@@ -182,22 +182,22 @@
   }
 
   function selectDdoc(item) {
+    unselectFun();
     try {
       document.getElementById(ddoc).style.borderStyle = 'outset';
     } catch(err) {
     }
-    if (isDirty) console.log("isDirty", doc); else console.log("No change", doc);
-    /*db.put(ddoc).then(function(info){
+    if (isDirty) db.put(ddoc).then(function(info){
       doc._rev = info.rev;
       console.log('saved',info);
     }).catch(function(err){
       console.log("bad",err);
-    });*/
+    });
     item.style.borderStyle = 'inset';
     getDdoc("_design/" + item.id);
   }
 
-  function selectFun(item) {
+  function unselectFun() {
     if (fun!='') {
       try {
         document.getElementById(fun).style.borderStyle = 'outset';
@@ -232,11 +232,17 @@
         }
       }
     }
+  }
+
+  function selectFun(item) {
+    unselectFun();
     item.style.borderStyle = 'inset';
     fun = item.id;
     var type = fun.split('/');
     switch (type[0]) {
     case "views":
+      editor1.setOption("mode",(doc.language?doc.language:'javascript'));
+      editor2.setOption("mode",(doc.language?doc.language:'javascript'));
       editor1.setValue(doc[type[0]][type[1]]['map']);
       editor2.display.wrapper.style.display = 'block';
       editor1.display.wrapper.style.height = '360px';
@@ -248,14 +254,18 @@
       }
       break;
     case "validate":
+      editor1.setOption("mode",(doc.language?doc.language:'javascript'));
       var validate = (!doc['validate_doc_update'])?
-        "function (newDoc, oldDoc, userCtx) {\n\t\n}":
+        (doc.language==='erlang'?
+          "fun ({NewDoc}, _OldDoc, _UserCtx, _SecObj) ->\n\t\nend.":
+          "function (newDoc, oldDoc, userCtx) {\n\t\n}"):
         doc['validate_doc_update'];
       editor1.setValue(validate);
       editor1.display.wrapper.style.height = '480px';
       editor2.display.wrapper.style.display = 'none';
       break;
     default:
+      editor1.setOption("mode",(doc.language?doc.language:'javascript'));
       editor1.setValue(doc[type[0]][type[1]]);
       editor1.display.wrapper.style.height = '480px';
       editor2.display.wrapper.style.display = 'none';
